@@ -2,7 +2,7 @@
 import { AccountWallet, CompleteAddress, ContractDeployer, createDebugLogger, Fr, PXE, waitForPXE, TxStatus, createPXEClient, getContractInstanceFromDeployParams, DebugLogger } from "@aztec/aztec.js";
 
 
-const setupSandbox = async () => {
+export const setupSandbox = async () => {
   const PXE_URL = 'http://localhost:8080';
   const pxe = createPXEClient(PXE_URL);
   await waitForPXE(pxe);
