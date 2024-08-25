@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@aztec/bb.js": "^0.50.1",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-slot": "^1.1.0",
     "@shieldswap/wallet-sdk": "^0.48.0",

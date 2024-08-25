@@ -18,6 +18,8 @@ export default async function Home() {
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <h1 className="text-2xl">Home Page</h1>
       <p>Check the console for output from the async function.</p>
+
+      
             {/* <WalletUI/> */}
 
     </main>
