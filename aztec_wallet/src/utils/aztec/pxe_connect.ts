@@ -4,12 +4,18 @@ import { AccountWallet, CompleteAddress, ContractDeployer, createDebugLogger, Fr
 
 export const setupSandbox = async () => {
   const PXE_URL = 'http://localhost:8080';
+  console.log(`Connecting to PXE at ${PXE_URL}`);
   const pxe = createPXEClient(PXE_URL);
-  await waitForPXE(pxe);
+  try {
+    await waitForPXE(pxe);
+  } catch (e) {
+    console.error('Failed to connect to PXE:', e);
+    throw e;
+  }
   return pxe;
 };
 
-(async () => {  // Wrapping the code inside an async IIFE (Immediately Invoked Function Expression)
+(async () => { 
   try {
     console.log("Process Env");
     console.log(process.env);
@@ -18,6 +24,10 @@ export const setupSandbox = async () => {
     console.log(accounts);
     console.log(await pxe.getBlockNumber());
   } catch (e) {
-    console.log(e);
+    if (e.name === 'FetchError') {
+      console.error('Network error occurred while trying to connect to PXE:', e);
+    } else {
+      console.error('An unexpected error occurred:', e);
+    }
   }
 })();

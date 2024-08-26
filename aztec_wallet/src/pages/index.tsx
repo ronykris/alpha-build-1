@@ -1,27 +1,41 @@
 import Image from "next/image";
-import { setupSandbox } from "../utils/aztec/pxe_connect"; // Import your async function
+import { setupSandbox } from "../utils/aztec/pxe_connect";
+import { useEffect, useState } from "react";
 
 
-export default async function Home() {
-  try {
-    const pxe = await setupSandbox();
-    const registeredAccounts = await pxe.getRegisteredAccounts();
-    const blockNum = await pxe.getBlockNumber();
+export default function Home() {
+  const [registeredAccounts, setRegisteredAccounts] = useState(null);
+  const [blockNum, setBlockNum] = useState(null);
+  const [error, setError] = useState(null);
 
-    console.log("Registered Accounts:", registeredAccounts);
-    console.log("Block Number:", blockNum);
-  } catch (e) {
-    console.error("Error setting up sandbox:", e);
-  }
+  useEffect(() =>{
+    const fetchData = async () => {
+      try {
+        const pxe = await setupSandbox();
+        const registeredAccounts = await pxe.getRegisteredAccounts();
+        const blockNum = await pxe.getBlockNumber();
+        setRegisteredAccounts(registeredAccounts)
+        setBlockNum(blockNum)
+      } catch (e) {
+        setError(e.message);
+        console.error("Error setting up sandbox:", e);
+      }
+    }
+    fetchData()
+  }, [])
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <h1 className="text-2xl">Home Page</h1>
-      <p>Check the console for output from the async function.</p>
-
-      
+      {error && <p>Error: {error}</p>}
+      {!error && registeredAccounts && blockNum && (
+        <>
+          <p>Registered Accounts: {JSON.stringify(registeredAccounts)}</p>
+          <p>Block Number: {blockNum}</p>
+        </>
+      )}
+      {!error && (!registeredAccounts || !blockNum) && <p>Loading...</p>}
             {/* <WalletUI/> */}
-
     </main>
   );
 }
