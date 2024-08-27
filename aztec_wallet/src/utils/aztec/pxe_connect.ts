@@ -24,10 +24,14 @@ export const setupSandbox = async () => {
     console.log(accounts);
     console.log(await pxe.getBlockNumber());
   } catch (e) {
-    if (e.name === 'FetchError') {
-      console.error('Network error occurred while trying to connect to PXE:', e);
+    if (e instanceof Error) {
+      if (e.name === 'FetchError') {
+        console.error('Network error occurred while trying to connect to PXE:', e);
+      } else {
+        console.error('An unexpected error occurred:', e);
+      }  
     } else {
-      console.error('An unexpected error occurred:', e);
+      console.error("Unknown error:", e);
     }
   }
 })();
