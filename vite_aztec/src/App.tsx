@@ -1,45 +1,36 @@
-import { useState, useEffect } from 'react';
-import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
+import React, { useEffect, useState } from 'react';
+import { WalletUI } from "@/components/wallet_ui";
 import './App.css';
-import { WalletUI } from "@/components/wallet_ui"; // Ensure the import path is correct
+import { PXE } from '@aztec/aztec.js';
 
-function App() {
-  const [count, setCount] = useState(0);
+// Define the type for the initPXE function
+type InitPXEFunction = () => Promise<PXE | null>;
 
-  // Effect to initialize wallet functionality (optional, based on your architecture)
+// Define props for App component
+interface AppProps {
+  initPXE: InitPXEFunction;
+}
+
+function App({ initPXE }: AppProps) {
+  const [pxe, setPxe] = useState<PXE | null>(null);
+
   useEffect(() => {
-    // You can perform any wallet initialization here if needed
-  }, []);
+    const initializePXE = async () => {
+      const initializedPXE = await initPXE();
+      setPxe(initializedPXE);
+    };
+    initializePXE();
+  }, [initPXE]);
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-
-      {/* Add the wallet UI container */}
+    <div className="App">
+      <header className="App-header">
+        <h1>My Wallet App</h1>
+      </header>
       <div id="wallet-root">
-        <WalletUI /> {/* Render WalletUI directly if needed */}
+        {pxe && <WalletUI pxe={pxe} />}
       </div>
-    </>
+    </div>
   );
 }
 

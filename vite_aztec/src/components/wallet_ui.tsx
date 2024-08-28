@@ -19,8 +19,12 @@ To read more about using these font, please visit the Next.js documentation:
 **/
 import { Button } from "../components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "../components/ui/avatar"
+import { PXE } from '@aztec/aztec.js';
+interface WalletUIProps {
+  pxe: PXE;
+}
 
-export function WalletUI() {
+export const WalletUI: React.FC<WalletUIProps> = ({ pxe }) => {
   return (
     <div className="flex h-screen w-full flex-col bg-gray-900 text-white">
       <header className="flex items-center justify-between border-b border-gray-800 px-6 py-4">
