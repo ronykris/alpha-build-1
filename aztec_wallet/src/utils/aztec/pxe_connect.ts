@@ -1,7 +1,6 @@
 
 import { AccountWallet, CompleteAddress, ContractDeployer, createDebugLogger, Fr, PXE, waitForPXE, TxStatus, createPXEClient, getContractInstanceFromDeployParams, DebugLogger } from "@aztec/aztec.js";
 
-
 export const setupSandbox = async () => {
   const PXE_URL = 'http://localhost:8080';
   console.log(`Connecting to PXE at ${PXE_URL}`);
@@ -22,7 +21,7 @@ export const setupSandbox = async () => {
     let pxe = await setupSandbox();
     let accounts = await pxe.getRegisteredAccounts();
     console.log(accounts);
-    console.log(await pxe.getBlockNumber());
+    console.log(await pxe.getBlockNumber())
   } catch (e) {
     if (e instanceof Error) {
       if (e.name === 'FetchError') {
