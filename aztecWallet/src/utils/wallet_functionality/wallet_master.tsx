@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { CompleteAddress, PXE } from '@aztec/aztec.js';
 import { setupSandbox, getAccounts, getBlockNumber } from '../pxeUtils';
+import { addAccountIntegrationToStore, CreateAccountOptions, AccountCreationResult } from './account_create';
 
 interface Transaction {
   id: number;
@@ -27,6 +28,7 @@ interface WalletState {
   setShowHistory: (showHistory: boolean) => void;
   sendTransaction: () => void;
   initializePXE: () => Promise<void>;
+  createAccount: (options: CreateAccountOptions) => Promise<AccountCreationResult | null>;
 }
 
 const useWalletStore = create<WalletState>((set, get) => ({
@@ -75,6 +77,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
       set({ pxeError: error instanceof Error ? error.message : 'Unknown error' });
     }
   },
+  ...addAccountIntegrationToStore(set, get),
 }));
 
 export default useWalletStore;
