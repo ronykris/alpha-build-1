@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { CompleteAddress, PXE } from '@aztec/aztec.js';
-import { setupSandbox, getAccounts, getBlockNumber } from '../utils/pxeUtils';
+import { setupSandbox, getAccounts, getBlockNumber } from './pxeUtils';
 
 interface Transaction {
   id: number;

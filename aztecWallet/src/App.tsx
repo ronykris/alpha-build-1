@@ -10,7 +10,7 @@ function App() {
         <p className="text-gray-600 mt-2">Manage your crypto assets with ease</p>
       </header>
       <main>
-        <CryptoWallet />
+        <CryptoWallet/>
       </main>
       <footer className="mt-8 text-center text-gray-500 text-sm">
         &copy; 2024 Aztec Wallet. All rights reserved.
