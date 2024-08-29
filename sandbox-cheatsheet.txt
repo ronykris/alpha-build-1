@@ -1,0 +1,11 @@
+1. install sandbox
+```bash -i <(curl -s install.aztec.network)
+
+2. Start the sandbox by running:
+```cd ~/.aztec && docker-compose -f ./docker-compose.sandbox.yml up
+
+3. Run PXE Mode in Another Terminal:
+```aztec start --port 8081 --pxe nodeUrl=http://localhost:8080/
+
+or
+```aztec start --port 8081 nodeUrl=http://localhost:8080/ --pxe
