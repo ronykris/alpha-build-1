@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { CompleteAddress, PXE } from '@aztec/aztec.js';
-import { setupSandbox, getAccounts, getBlockNumber } from './pxeUtils';
+import { setupSandbox, getAccounts, getBlockNumber } from '../pxeUtils';
 
 interface Transaction {
   id: number;
@@ -30,7 +30,7 @@ interface WalletState {
 }
 
 const useWalletStore = create<WalletState>((set, get) => ({
-  balance: 1.2345,
+  balance: 1.23453,
   address: '0x1234...5678',
   transactions: [
     { id: 1, type: 'Send', amount: 0.1, to: '0xabcd...efgh', timestamp: new Date().toISOString() },
