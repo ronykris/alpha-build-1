@@ -5,21 +5,22 @@ export class WalletConnector {
   private pxe: PXE | null = null;
   private wallet: ShieldswapWalletSdk | null = null;
 
-  async initializePXE(): Promise<void> {
-    this.pxe = createPXEClient("http://localhost:8080");
-    await waitForPXE(this.pxe);
+  async setupPXE(): Promise<void> {
+    const pxe = createPXEClient("http://localhost:8080");
+    await waitForPXE(pxe);
+    this.pxe = pxe;
   }
 
   async connectWallet(projectId: string): Promise<string> {
     if (!this.pxe) {
-      throw new Error("PXE not initialized. Call initializePXE first.");
+      throw new Error("PXE not initialized. Call setupPXE first.");
     }
 
     this.wallet = new ShieldswapWalletSdk(
       {
-        projectId: projectId,
+        projectId: "1a51576d0996755d6bde47b67edadb9a",
       },
-      this.pxe
+      this.pxe as any // Type assertion to bypass type mismatch
     );
 
     const account = await this.wallet.connect();
@@ -36,3 +37,4 @@ export class WalletConnector {
 }
 
 export const walletConnector = new WalletConnector();
+

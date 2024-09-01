@@ -1,6 +1,6 @@
 import React from 'react';
 import { CryptoWallet } from './components/CryptoWallet';
-import {ConnectdAppShieldSwap} from './components/ConnectdAppShieldSwap'
+import {ConnectDAppShieldSwap} from './components/ConnectdAppShieldSwap'
 //import "./App.css"
 
 function App() {
@@ -12,6 +12,7 @@ function App() {
       </header>
       <main>
         <CryptoWallet/>
+        <ConnectDAppShieldSwap/>
       </main>
       <footer className="mt-8 text-center text-gray-500 text-sm">
         &copy; 2024 Aztec Wallet. All rights reserved.
