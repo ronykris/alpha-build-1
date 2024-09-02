@@ -1,6 +1,6 @@
 import React from 'react';
 import { CryptoWallet } from './components/CryptoWallet';
-import {ConnectDAppShieldSwap} from './components/ConnectdAppShieldSwap'
+import {ConnectDAppShieldSwap} from './components/ConnectShieldSwap'
 //import "./App.css"
 
 function App() {

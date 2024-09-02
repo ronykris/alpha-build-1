@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { walletConnector } from '../utils/wallet_functionality/wallet_connect_shieldswap';
 
 export function ConnectDAppShieldSwap() {
+  
   const [isConnecting, setIsConnecting] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +38,7 @@ export function ConnectDAppShieldSwap() {
 
   return (
     <div className="p-4 bg-white rounded-lg shadow">
-      <h2 className="text-2xl font-bold mb-4">Connect to Aztec Wallet</h2>
+      <h2 className="text-2xl font-bold mb-4">Connect to ShieldSwap</h2>
       {error && <p className="text-red-500 mb-4">{error}</p>}
       {walletAddress ? (
         <div>
