@@ -1,6 +1,8 @@
 import { createPXEClient, waitForPXE, PXE, AztecAddress, Fr } from "@aztec/aztec.js";
 import { ShieldswapWalletSdk } from "@shieldswap/wallet-sdk";
 import { TokenContract } from "@aztec/noir-contracts.js/Token";
+import { Wallet } from "@aztec/aztec.js";
+
 
 class WalletConnector {
   private pxe: PXE | null = null;
@@ -18,7 +20,7 @@ class WalletConnector {
 
     this.wallet = new ShieldswapWalletSdk(
       {
-        projectId: projectId,
+        projectId: "1a51576d0996755d6bde47b67edadb9a",
       },
       this.pxe as any
     );
@@ -31,14 +33,20 @@ class WalletConnector {
     if (!this.wallet) {
       throw new Error("Wallet not connected");
     }
-
+  
     const account = this.wallet.getAccount();
     if (!account) throw new Error("Wallet not connected");
-
-    const myToken = await TokenContract.deploy(account, account.getAddress(), name, symbol, decimals)
+  
+    const myToken = await TokenContract.deploy(
+      account,
+      account.getAddress(), // admin address
+      name,
+      symbol,
+      BigInt(decimals)
+    )
       .send()
       .deployed();
-
+  
     return myToken.address.toString();
   }
 
@@ -50,7 +58,7 @@ class WalletConnector {
     const account = this.wallet.getAccount();
     if (!account) throw new Error("Wallet not connected");
 
-    const myToken = await TokenContract.at(tokenAddress);
+    const myToken = await TokenContract.at(tokenAddress as AztecAddress, this.wallet);
     const receipt = await myToken
       .withWallet(account)
       .methods.mint_public(account.getAddress(), new Fr(amount))
