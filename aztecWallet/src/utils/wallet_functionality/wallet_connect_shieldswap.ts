@@ -1,18 +1,19 @@
 import { PXE, createPXEClient, waitForPXE } from "@aztec/aztec.js";
 import { ShieldswapWalletSdk } from "@shieldswap/wallet-sdk";
+import { TokenContract  } from "@aztec/noir-contracts.js/Token";
 
 export class WalletConnector {
-  private pxe: PXE | null = null;
-  private wallet: ShieldswapWalletSdk | null = null;
+  private static pxe: PXE | null = null;
+  public wallet: ShieldswapWalletSdk | null = null;
 
-  async setupPXE(): Promise<void> {
+  public async setupPXE(): Promise<void> {
     const pxe = createPXEClient("http://localhost:8080");
     await waitForPXE(pxe);
-    this.pxe = pxe;
+    WalletConnector.pxe = pxe;
   }
 
-  async connectWallet(projectId: string): Promise<string> {
-    if (!this.pxe) {
+  public async connectWallet(): Promise<string> {
+    if (!WalletConnector.pxe) {
       throw new Error("PXE not initialized. Call setupPXE first.");
     }
 
@@ -20,7 +21,7 @@ export class WalletConnector {
       {
         projectId: "1a51576d0996755d6bde47b67edadb9a",
       },
-      this.pxe as any // Type assertion to bypass type mismatch
+      WalletConnector.pxe as any // Type assertion to bypass type mismatch
     );
 
     const account = await this.wallet.connect();
@@ -28,7 +29,7 @@ export class WalletConnector {
   }
 
   getPXE(): PXE | null {
-    return this.pxe;
+    return WalletConnector.pxe;
   }
 
   getWallet(): ShieldswapWalletSdk | null {
@@ -37,4 +38,3 @@ export class WalletConnector {
 }
 
 export const walletConnector = new WalletConnector();
-
