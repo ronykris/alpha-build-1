@@ -1,53 +1,56 @@
-import { createPXEClient, waitForPXE, PXE, AztecAddress, Fr } from "@aztec/aztec.js";
-import { ShieldswapWalletSdk } from "@shieldswap/wallet-sdk";
-import { TokenContract } from "@aztec/noir-contracts.js/Token";
-import { Wallet } from "@aztec/aztec.js";
-
-
+import {
+  createPXEClient,
+  waitForPXE,
+  PXE,
+  AztecAddress,
+  Fr,
+  GrumpkinScalar,
+  Contract,
+  AccountWallet,
+  AuthWitness,
+} from "@aztec/aztec.js";
+import { TokenContract, TokenContractArtifact } from "@aztec/noir-contracts.js/Token";
+import { getSchnorrAccount } from '@aztec/accounts/schnorr';
+import { AccountManager, type Salt } from '@aztec/aztec.js/account';
+interface WalletLike {
+  getAddress(): Promise<AztecAddress>;
+  // Add any other methods that you need from the wallet
+}
 class WalletConnector {
   private pxe: PXE | null = null;
-  private wallet: ShieldswapWalletSdk | null = null;
+  private wallet: any = null;
 
   async initializePXE(): Promise<void> {
     this.pxe = createPXEClient("http://localhost:8080");
     await waitForPXE(this.pxe);
   }
 
-  async connectWallet(projectId: string): Promise<string> {
+  async connectWallet(): Promise<string> {
     if (!this.pxe) {
       throw new Error("PXE not initialized. Call initializePXE first.");
     }
 
-    this.wallet = new ShieldswapWalletSdk(
-      {
-        projectId: "1a51576d0996755d6bde47b67edadb9a",
-      },
-      this.pxe as any
-    );
+    const secretKey = Fr.random();
+    const signingPrivateKey = GrumpkinScalar.random();
+    this.wallet = await getSchnorrAccount(this.pxe, secretKey, signingPrivateKey);
 
-    const account = await this.wallet.connect();
-    return account.getAddress().toString();
+    return (await this.wallet.getAddress()).toString();
   }
 
   async deployToken(name: string, symbol: string, decimals: number): Promise<string> {
     if (!this.wallet) {
       throw new Error("Wallet not connected");
     }
-  
-    const account = this.wallet.getAccount();
-    if (!account) throw new Error("Wallet not connected");
-  
-    const myToken = await TokenContract.deploy(
-      account,
-      account.getAddress(), // admin address
+
+    const deployedContract = await TokenContract.deploy(
+      this.wallet,
+      await this.wallet.getAddress(),
       name,
       symbol,
       BigInt(decimals)
-    )
-      .send()
-      .deployed();
-  
-    return myToken.address.toString();
+    ).send().deployed();
+
+    return deployedContract.address.toString();
   }
 
   async mintTokens(tokenAddress: string, amount: number): Promise<string> {
@@ -55,17 +58,10 @@ class WalletConnector {
       throw new Error("Wallet not connected");
     }
 
-    const account = this.wallet.getAccount();
-    if (!account) throw new Error("Wallet not connected");
+    const contract = await TokenContract.at(AztecAddress.fromString(tokenAddress), this.wallet);
+    const tx = await contract.methods.mint_public(await this.wallet.getAddress(), new Fr(amount)).send().wait();
 
-    const myToken = await TokenContract.at(tokenAddress as AztecAddress, this.wallet);
-    const receipt = await myToken
-      .withWallet(account)
-      .methods.mint_public(account.getAddress(), new Fr(amount))
-      .send()
-      .wait();
-
-    return receipt.txHash.toString();
+    return tx.txHash.toString();
   }
 
   async checkBalance(tokenAddress: string): Promise<string> {
@@ -73,14 +69,8 @@ class WalletConnector {
       throw new Error("Wallet not connected");
     }
 
-    const account = this.wallet.getAccount();
-    if (!account) throw new Error("Wallet not connected");
-
-    const myToken = await TokenContract.at(tokenAddress);
-    const balance = await myToken
-      .withWallet(account)
-      .methods.balance_of_public(account.getAddress())
-      .simulate();
+    const contract = await TokenContract.at(AztecAddress.fromString(tokenAddress), this.wallet);
+    const balance = await contract.methods.balance_of_public(await this.wallet.getAddress()).simulate();
 
     return balance.toString();
   }
