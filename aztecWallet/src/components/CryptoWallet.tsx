@@ -34,6 +34,10 @@ export function CryptoWallet() {
     const [accountAlias, setAccountAlias] = useState('');
     const [creatingAccount, setCreatingAccount] = useState(false);
 
+    const [transferAmount, setTransferAmount] = useState('');
+    const [selectedChain, setSelectedChain] = useState('');
+    const [transferDirection, setTransferDirection] = useState<'toAztec' | 'fromAztec'>('toAztec');
+
     useEffect(() => {
       initializePXE();
     }, []);
@@ -58,6 +62,11 @@ export function CryptoWallet() {
 
     const handleAccountTypeChange = (value: string) => {
       setAccountType(value as AccountType);
+    };
+
+    const handleAztecEthereumTransfer = async () => {
+      console.log(`Transferring ${transferAmount} ${transferDirection === 'toAztec' ? 'to' : 'from'} Aztec on ${selectedChain}`);
+      // Placeholder for actual transfer logic using the PXE client
     };
 
     return (
@@ -85,10 +94,11 @@ export function CryptoWallet() {
           </div>
           {!showHistory ? (
             <Tabs defaultValue="send" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="send">Send</TabsTrigger>
                 <TabsTrigger value="receive">Receive</TabsTrigger>
                 <TabsTrigger value="create">Create</TabsTrigger>
+                <TabsTrigger value="aztec">Bridge</TabsTrigger>
               </TabsList>
               <TabsContent value="send">
                 <div className="space-y-2">
@@ -147,6 +157,50 @@ export function CryptoWallet() {
                     disabled={creatingAccount}
                   >
                     {creatingAccount ? 'Creating...' : 'Create Account'}
+                  </Button>
+                </div>
+              </TabsContent>
+              <TabsContent value="aztec">
+                <div className="space-y-2">
+                  <Label htmlFor="transferDirection">Transfer Direction</Label>
+                  <Select onValueChange={(value) => setTransferDirection(value as 'toAztec' | 'fromAztec')}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select direction" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="toAztec">To Aztec</SelectItem>
+                      <SelectItem value="fromAztec">From Aztec</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Label htmlFor="chainSelect">EVM Chain</Label>
+                  <Select onValueChange={setSelectedChain}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select EVM Chain" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ethereum">Ethereum Mainnet</SelectItem>
+                      <SelectItem value="goerli">Goerli Testnet</SelectItem>
+                      <SelectItem value="sepolia">Sepolia Testnet</SelectItem>
+                      <SelectItem value="polygon">Polygon</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Label htmlFor="transferAmount">Amount</Label>
+                  <Input 
+                    id="transferAmount" 
+                    type="number" 
+                    placeholder="0.00" 
+                    value={transferAmount} 
+                    onChange={(e) => setTransferAmount(e.target.value)} 
+                  />
+                  
+                  <Button 
+                    className="w-full mt-2" 
+                    onClick={handleAztecEthereumTransfer}
+                    disabled={!selectedChain || !transferAmount}
+                  >
+                    Transfer {transferDirection === 'toAztec' ? 'to' : 'from'} Aztec
                   </Button>
                 </div>
               </TabsContent>
