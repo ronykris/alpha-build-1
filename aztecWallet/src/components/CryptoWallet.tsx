@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AccountType, CreateAccountOptions } from '../utils/wallet_functionality/account_create';
+import CustomSelect from './ui/CustomSelect';
 
 
 export function CryptoWallet() {
@@ -161,31 +162,32 @@ export function CryptoWallet() {
                 </div>
               </TabsContent>
               <TabsContent value="aztec">
+                <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="transferDirection">Transfer Direction</Label>
-                  <Select onValueChange={(value) => setTransferDirection(value as 'toAztec' | 'fromAztec')}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select direction" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="toAztec">To Aztec</SelectItem>
-                      <SelectItem value="fromAztec">From Aztec</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
+                  <CustomSelect
+                    options={[
+                      { value: 'toAztec', label: 'To Aztec' },
+                      { value: 'fromAztec', label: 'From Aztec' }
+                    ]}
+                    placeholder="Select direction"
+                    onChange={(value) => setTransferDirection(value as 'toAztec' | 'fromAztec')}
+                  />
+                  </div>
+                  <div className="space-y-2">
                   <Label htmlFor="chainSelect">EVM Chain</Label>
-                  <Select onValueChange={setSelectedChain}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select EVM Chain" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ethereum">Ethereum Mainnet</SelectItem>
-                      <SelectItem value="goerli">Goerli Testnet</SelectItem>
-                      <SelectItem value="sepolia">Sepolia Testnet</SelectItem>
-                      <SelectItem value="polygon">Polygon</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
+                  <CustomSelect
+                    options={[
+                      { value: 'ethereum', label: 'Ethereum Mainnet' },
+                      { value: 'goerli', label: 'Goerli Testnet' },
+                      { value: 'sepolia', label: 'Sepolia Testnet' },
+                      { value: 'polygon', label: 'Polygon' }
+                    ]}
+                    placeholder="Select EVM Chain"
+                    onChange={setSelectedChain}
+                  />
+                  </div>
+                  <div className="space-y-2">
                   <Label htmlFor="transferAmount">Amount</Label>
                   <Input 
                     id="transferAmount" 
@@ -194,6 +196,7 @@ export function CryptoWallet() {
                     value={transferAmount} 
                     onChange={(e) => setTransferAmount(e.target.value)} 
                   />
+                  </div>
                   
                   <Button 
                     className="w-full mt-2" 
