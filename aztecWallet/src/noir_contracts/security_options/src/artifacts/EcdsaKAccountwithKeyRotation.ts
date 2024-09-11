@@ -40,7 +40,7 @@ export const EcdsaKAccountwithKeyRotationContractArtifact = loadContractArtifact
  */
 export class EcdsaKAccountwithKeyRotationContract extends ContractBase {
   
-  private constructor(
+  constructor(
     instance: ContractInstanceWithAddress,
     wallet: Wallet,
   ) {
