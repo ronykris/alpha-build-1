@@ -16,3 +16,6 @@
 [submodule "contracts/l1contract/lib/openzeppelin-contracts"]
 	path = contracts/l1contract/lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "contracts/l1contract/lib/aztec-packages"]
+	path = contracts/l1contract/lib/aztec-packages
+	url = https://github.com/AztecProtocol/aztec-packages
