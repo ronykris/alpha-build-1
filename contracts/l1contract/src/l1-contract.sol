@@ -30,7 +30,8 @@ contract L1Contract {
         bytes32 _secretHashForL2MessageConsumption
     ) external returns (bytes32) {
         // Preamble
-        IInbox inbox = registry.getRollup().INBOX();
+        //IInbox inbox = registry.getRollup().INBOX();
+        IInbox inbox = registry.getInbox();
         DataStructures.L2Actor memory actor = DataStructures.L2Actor(l2Bridge, 1);
 
         // Hash the message content to be reconstructed in the receiving contract
@@ -44,7 +45,8 @@ contract L1Contract {
         underlying.safeTransferFrom(msg.sender, address(this), _amount);
 
         // Send message to rollup
-        return inbox.sendL2Message(actor, contentHash, _secretHashForL2MessageConsumption);
+        uint32 deadline = uint32(block.timestamp + 1 days);
+        return inbox.sendL2Message(actor, deadline, contentHash, _secretHashForL2MessageConsumption);
     }
 
     function withdraw(
@@ -67,9 +69,10 @@ contract L1Contract {
             ))
         });
 
-        IOutbox outbox = registry.getRollup().OUTBOX();
+        IOutbox outbox = registry.getOutbox();
 
-        outbox.consume(message, _l2BlockNumber, _leafIndex, _path);
+        //outbox.consume(message, _l2BlockNumber, _leafIndex, _path);
+        outbox.consume(message);
 
         underlying.transfer(_recipient, _amount);
     }

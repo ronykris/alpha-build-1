@@ -3,7 +3,8 @@ src = "src"
 out = "out"
 libs = ["lib"]
 remappings = ["@openzeppelin/=lib/openzeppelin-contracts/",
-              "aztec-packages/l1-contracts/=lib/aztec-packages/l1-contracts/"
+              "aztec-packages/l1-contracts/=lib/aztec-packages/l1-contracts/",
+              "@aztec/core/=lib/aztec-packages/l1-contracts/src/core/"
              ]
 
 
