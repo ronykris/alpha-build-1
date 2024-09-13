@@ -8,12 +8,13 @@ import {
   PXE,
   Wallet,
   Grumpkin,
-  waitForPXE
+  waitForPXE,
+  Point
 } from '@aztec/aztec.js';
 import { EcdsaKAccountwithKeyRotationContract } from '../../noir_contracts/security_options/src/artifacts/EcdsaKAccountwithKeyRotation.ts';
 import { getInitialTestAccountsWallets } from "@aztec/accounts/testing";
 
-async function setupEnvironment(): Promise<{ pxe: PXE, wallet: AccountWallet }> {
+export async function setupEnvironment(): Promise<{ pxe: PXE, wallet: AccountWallet }> {
   const { PXE_URL = 'http://localhost:8080' } = process.env;
   const pxe = createPXEClient(PXE_URL);
   await waitForPXE(pxe);
@@ -23,13 +24,16 @@ async function setupEnvironment(): Promise<{ pxe: PXE, wallet: AccountWallet }> 
   return { pxe, wallet };
 }
 
-async function deployContract(wallet: Wallet, signingKeyX: bigint[], signingKeyY: bigint[]): Promise<EcdsaKAccountwithKeyRotationContract> {
+export async function deployContract(
+  wallet: Wallet, 
+  signingKeyX: (bigint | number)[], 
+  signingKeyY: (bigint | number)[]
+): Promise<EcdsaKAccountwithKeyRotationContract> {
   const deployTx = EcdsaKAccountwithKeyRotationContract.deploy(wallet, signingKeyX, signingKeyY);
   const receipt = await deployTx.send().wait();
   return EcdsaKAccountwithKeyRotationContract.at(receipt.contract.address, wallet);
 }
-
-async function testKeyRotation(contract: EcdsaKAccountwithKeyRotationContract, wallet: Wallet) {
+export async function testKeyRotation(contract: EcdsaKAccountwithKeyRotationContract, wallet: Wallet): Promise<Point> {
   console.log('Testing key rotation...');
 
   // Generate new key pair for rotation
@@ -45,6 +49,7 @@ async function testKeyRotation(contract: EcdsaKAccountwithKeyRotationContract, w
   await rotateTx.wait();
   console.log('Key rotation transaction sent');
 
+  return newPublicKey
   // Verify the key rotation (this would depend on how your contract allows verification)
   // For example, you might have a method to get the current public key
   // const currentKey = await contract.methods.getCurrentPublicKey().view();
