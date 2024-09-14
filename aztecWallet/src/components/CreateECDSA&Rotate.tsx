@@ -1,17 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AztecAddress } from "@aztec/aztec.js";
+import { AztecAddress, Fq } from "@aztec/aztec.js";
 import { deployContract, testKeyRotation, setupEnvironment } from '../utils/noir_contract_deploy/security_options';
 import { AccountWallet, PXE, Grumpkin, GrumpkinScalar, Point} from '@aztec/aztec.js';
 import { EcdsaKAccountwithKeyRotationContract } from '../noir_contracts/security_options/src/artifacts/EcdsaKAccountwithKeyRotation.ts';
+
+function bigIntToNumberArray(value: bigint): number[] {
+    const hex = value.toString(16).padStart(64, '0');
+    const result: number[] = [];
+    for (let i = 0; i < 32; i++) {
+        result.push(parseInt(hex.substr(i * 2, 2), 16));
+    }
+    return result;
+}
+
 
 export function EcdsaAccountKeyRotation() {
     const [pxe, setPxe] = useState<PXE | null>(null);
     const [wallet, setWallet] = useState<AccountWallet | null>(null);
     const [contractAddress, setContractAddress] = useState<AztecAddress | null>(null);
     const [currentPublicKey, setCurrentPublicKey] = useState<{ x: string, y: string } | null>(null);
-    const [newPublicKey, setNewPublicKey] = useState<{ x: string, y: string } | null>(null);
+    const [newPublicKey, setNewPublicKey] = useState<Fq | null>(null);
     const [contract, setContract] = useState<EcdsaKAccountwithKeyRotationContract | null>(null);
     const [status, setStatus] = useState('');
     const [error, setError] = useState('');
@@ -42,21 +52,24 @@ export function EcdsaAccountKeyRotation() {
             const grumpkin = new Grumpkin();
             const initialSecretKey = GrumpkinScalar.random();
             const initialPublicKey = grumpkin.mul(Grumpkin.generator, initialSecretKey);
-            
-            const initialPublicKeyX = [
-                initialPublicKey.x.toBigInt() >> 128n,
-                initialPublicKey.x.toBigInt() & ((1n << 128n) - 1n)
-            ];
-            const initialPublicKeyY = [
-                initialPublicKey.y.toBigInt() >> 128n,
-                initialPublicKey.y.toBigInt() & ((1n << 128n) - 1n)
-            ];
-            
+            const initialPublicKeyX = bigIntToNumberArray(initialPublicKey.x.toBigInt());
+            const initialPublicKeyY = bigIntToNumberArray(initialPublicKey.y.toBigInt());
+
             setStatus('Deploying contract...');
-            const newContract = await deployContract(wallet, initialPublicKeyX, initialPublicKeyY);
             
-            setContract(newContract);
-            setContractAddress(newContract.address);
+            const newContract = await EcdsaKAccountwithKeyRotationContract.deploy(
+                wallet, 
+                initialPublicKeyX,
+                initialPublicKeyY
+            );
+            
+            setContract(newContract as unknown as EcdsaKAccountwithKeyRotationContract);
+            // const receipt = await newContract.send().wait();
+            if (newContract.address) {
+                setContractAddress(newContract.getInstance().address);
+            } else {
+                setError('Failed to get contract address');
+            }
             setCurrentPublicKey({
                 x: initialPublicKey.x.toString(),
                 y: initialPublicKey.y.toString()
@@ -74,16 +87,16 @@ export function EcdsaAccountKeyRotation() {
         }
         try {
             setStatus('Rotating key...');
-            const newPublicKeyPoint: Point = await testKeyRotation(contract, wallet);
-            const newPublicKeyObj = {
-                x: newPublicKeyPoint.x.toString(),
-                y: newPublicKeyPoint.y.toString()
-            };
-            setNewPublicKey(newPublicKeyObj);
-            setCurrentPublicKey(newPublicKeyObj);
+            const newPublicKeyPoint: Fq = await testKeyRotation(contract, wallet);
+            // const newPublicKeyObj = {
+            //     x: newPublicKeyPoint.x.toString(),
+            //     y: newPublicKeyPoint.y.toString()
+            // };
+            setNewPublicKey(newPublicKeyPoint);
+            // setCurrentPublicKey(newPublicKeyObj);
             setStatus('Key rotated successfully');
         } catch (err) {
-            setError('Failed to rotate key: ' + (err instanceof Error ? err.message : String(err)));
+            setError('Failed to rotate key, now: ' + (err instanceof Error ? err.message : String(err)));
         }
     };
 
@@ -113,9 +126,8 @@ export function EcdsaAccountKeyRotation() {
                     </Button>
                     {newPublicKey && (
                         <div>
-                            <p>New Public Key X: {newPublicKey.x}</p>
-                            <p>New Public Key Y: {newPublicKey.y}</p>
-                        </div>
+                            <p>New Public Key : {newPublicKey.toString()}</p>
+\                        </div>
                     )}
                     {status && <p>{status}</p>}
                     {error && <p className="text-red-500">{error}</p>}

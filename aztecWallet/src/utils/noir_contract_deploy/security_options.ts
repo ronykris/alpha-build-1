@@ -4,6 +4,7 @@ import {
   CompleteAddress,
   createPXEClient,
   Fr,
+  Fq, 
   GrumpkinScalar,
   PXE,
   Wallet,
@@ -33,20 +34,29 @@ export async function deployContract(
   const receipt = await deployTx.send().wait();
   return EcdsaKAccountwithKeyRotationContract.at(receipt.contract.address, wallet);
 }
-export async function testKeyRotation(contract: EcdsaKAccountwithKeyRotationContract, wallet: Wallet): Promise<Point> {
+
+function bigIntToNumberArray(value: bigint): number[] {
+  const hex = value.toString(16).padStart(64, '0');
+  const result: number[] = [];
+  for (let i = 0; i < 32; i++) {
+      result.push(parseInt(hex.substr(i * 2, 2), 16));
+  }
+  return result;
+}
+
+export async function testKeyRotation(contract: EcdsaKAccountwithKeyRotationContract, wallet: Wallet): Promise<Fq> {
   console.log('Testing key rotation...');
 
   // Generate new key pair for rotation
   const grumpkin = new Grumpkin();
-  const newSecretKey = GrumpkinScalar.random();
-  const newPublicKey = grumpkin.mul(Grumpkin.generator, newSecretKey);
-
-  const newPublicKeyX = [newPublicKey.x.toBigInt()];
-  const newPublicKeyY = [newPublicKey.y.toBigInt()];
+  const newPublicKey = GrumpkinScalar.random();
+  const initialPublicKey = grumpkin.mul(Grumpkin.generator, newPublicKey);
+  const newPublicKeyX = bigIntToNumberArray(initialPublicKey.x.toBigInt());
+  const newPublicKeyY = bigIntToNumberArray(initialPublicKey.y.toBigInt());
 
   // Perform key rotation
-  const rotateTx = await contract.methods.rotate_key(newPublicKeyX, newPublicKeyY).send();
-  await rotateTx.wait();
+  const rotateTx = await contract.methods.rotate_key(newPublicKeyX, newPublicKeyY);
+  // await rotateTx.wait();
   console.log('Key rotation transaction sent');
 
   return newPublicKey
