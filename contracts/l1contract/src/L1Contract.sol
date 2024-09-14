@@ -72,7 +72,8 @@ contract L1Contract {
         IOutbox outbox = registry.getOutbox();
 
         //outbox.consume(message, _l2BlockNumber, _leafIndex, _path);
-        outbox.consume(message);
+        bytes32 entryKey = outbox.consume(message);
+        require(entryKey != bytes32(0), "Message consumption failed");
 
         underlying.transfer(_recipient, _amount);
     }
