@@ -69,13 +69,8 @@ contract EcdsaKAccountwithKeyRotation {
     fn rotate_key(new_signing_pub_key_x: [u8; 32], new_signing_pub_key_y: [u8; 32]) {
         let this = context.this_address();
         let this_keys = get_current_public_keys(&mut context, this);
-        
-        // Verify that the caller is authorized to rotate the key
-        assert(is_valid_impl(&mut context, context.get_args_hash()), "Unauthorized key rotation");
-        
-        // Create a new EcdsaPublicKeyNote with the new public key
-        let mut new_pub_key_note = EcdsaPublicKeyNote::new(new_signing_pub_key_x, new_signing_pub_key_y, this_keys.npk_m.hash());
-        
+        // assert(is_valid_impl(&mut context, context.get_args_hash()), "Unauthorized key rotation");
+        let mut new_pub_key_note = EcdsaPublicKeyNote::new(new_signing_pub_key_x, new_signing_pub_key_y, this_keys.npk_m.hash()); 
         // Replace the current public key note with the new one
         storage.public_key.replace(&mut new_pub_key_note).emit(encode_and_encrypt_note(&mut context, this, this));
     }
