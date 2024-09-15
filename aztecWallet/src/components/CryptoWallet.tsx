@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AccountType, CreateAccountOptions } from '../utils/wallet_functionality/account_create';
 import CustomSelect from './ui/CustomSelect';
+import { connectToL1Chain } from '../utils/pxeUtils';
 
 
 export function CryptoWallet() {
@@ -39,9 +40,36 @@ export function CryptoWallet() {
     const [selectedChain, setSelectedChain] = useState('');
     const [transferDirection, setTransferDirection] = useState<'toAztec' | 'fromAztec'>('toAztec');
 
+    const [l1ChainId, setL1ChainId] = useState<number | null>(null);
+    const [l1ChainName, setL1ChainName] = useState<string | null>(null);
+    const [l1ChainBlock, setL1ChainBlock] = useState<number | null>(null);
+    const [l1ConnectionError, setL1ConnectionError] = useState<string | null>(null);
+    const [isConnectingL1, setIsConnectingL1] = useState(false);
+
     useEffect(() => {
       initializePXE();
     }, []);
+
+    const handleChainSelect = async (chain: string) => {
+      setSelectedChain(chain);
+      setIsConnectingL1(true);
+      setL1ChainId(null);
+      setL1ChainName(null);
+      setL1ChainBlock(null);
+      setL1ConnectionError(null);
+
+      try {
+        const { chainId, name, block } = await connectToL1Chain(chain);
+        setL1ChainId(chainId);
+        setL1ChainName(name);
+        setL1ChainBlock(block);
+      } catch (error) {
+        console.error('Failed to connect to L1 chain:', error);
+        setL1ConnectionError(error instanceof Error ? error.message : 'Unknown error');
+      } finally {
+        setIsConnectingL1(false);
+      }
+    };
 
     const handleCreateAccount = async () => {
       setCreatingAccount(true);
@@ -184,7 +212,7 @@ export function CryptoWallet() {
                       { value: 'polygon', label: 'Polygon' }
                     ]}
                     placeholder="Select EVM Chain"
-                    onChange={setSelectedChain}
+                    onChange={handleChainSelect}
                   />
                   </div>
                   <div className="space-y-2">
@@ -225,18 +253,37 @@ export function CryptoWallet() {
           )}
 
           <div className="mt-4">
-            <h3 className="text-lg font-semibold">PXE Connection</h3>
+            <h3 className="text-lg font-semibold">Connection Status</h3>
+            <div className="mt-2">
+              <h4 className="text-base font-semibold">Aztec Connection</h4>
             {pxe ? (
               <div>
-                <p>Connected to PXE</p>
+                 <p className="text-green-600">Connected to Aztec</p>
                 <p>Accounts: {pxeAccounts.length}</p>
                 <p>Block Number: {blockNumber}</p>
               </div>
             ) : pxeError ? (
               <p className="text-red-500">Error: {pxeError}</p>
             ) : (
-              <Button onClick={initializePXE}>Connect to PXE</Button>
+              <Button onClick={initializePXE}>Connect to Aztec</Button>
             )}
+          </div>
+            <div className="mt-2">
+              <h4 className="text-base font-semibold">L1 Chain Connection</h4>
+              {isConnectingL1 ? (
+                <p className="text-yellow-500">Connecting to L1 Chain...</p>
+              ) : l1ChainId && l1ChainName ? (
+                <>
+                <p className="text-green-600">Connected to {l1ChainName}</p>
+                <p>Chain ID: {l1ChainId}</p>
+                <p>Block Number: {l1ChainBlock}</p>
+                </>
+              ) : l1ConnectionError ? (
+                <p className="text-red-500">L1 Connection Error: {l1ConnectionError}</p>
+              ) : (
+                <p className="text-gray-500">No L1 Chain selected</p>
+              )}
+            </div>
           </div>
         </CardContent>
         <CardFooter className="bg-gray-50 border-t border-gray-200">

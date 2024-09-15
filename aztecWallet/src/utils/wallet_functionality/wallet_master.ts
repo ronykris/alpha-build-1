@@ -75,7 +75,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
     } catch (error) {
       console.error('Failed to initialize PXE:', error);
       set({ pxeError: error instanceof Error ? error.message : 'Unknown error' });
-    }
+    } 
   },
   ...addAccountIntegrationToStore(set, get),
 }));
