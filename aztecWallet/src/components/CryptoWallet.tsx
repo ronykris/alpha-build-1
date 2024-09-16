@@ -9,27 +9,35 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AccountType, CreateAccountOptions } from '../utils/wallet_functionality/account_create';
 import CustomSelect from './ui/CustomSelect';
-import { connectToL1Chain } from '../utils/pxeUtils';
+import { connectToL1Chain, depositToAztecPrivate } from '../utils/l1Utils';
+import { ethers } from 'ethers';
 
 
 export function CryptoWallet() {
     const { 
       balance, 
       address, 
-      transactions, 
+      l1Account,
+      setL1Account,
       recipient, 
       amount, 
-      showHistory, 
+      //showHistory, 
       pxe,
       pxeAccounts,
       blockNumber,
       pxeError,
+      //ethProvider,
+      pxeTransactions, 
+      l1Transactions,
       setRecipient, 
       setAmount, 
-      setShowHistory, 
+      //setShowHistory, 
       sendTransaction,
       initializePXE,
-      createAccount
+      setEthProvider,
+      fetchPXETransactions,
+      fetchL1Transactions,
+      createAccount,
     } = useWalletStore();
 
     const [accountType, setAccountType] = useState<AccountType>('schnorr');
@@ -46,9 +54,55 @@ export function CryptoWallet() {
     const [l1ConnectionError, setL1ConnectionError] = useState<string | null>(null);
     const [isConnectingL1, setIsConnectingL1] = useState(false);
 
+    const [ethProvider, setLocalEthProvider] = useState<ethers.BrowserProvider | null>(null);
+    const [transferStatus, setTransferStatus] = useState<string>('');
+
+    const [showHistory, setShowHistory] = useState(false);
+    const [activeHistoryTab, setActiveHistoryTab] = useState<'PXE' | 'L1'>('PXE');
+    const [isLoadingL1Transactions, setIsLoadingL1Transactions] = useState(false);
+
+    const getConnectedAccountAddress = async () => {
+      try {
+        if (window.ethereum) {
+          const web3Provider = new ethers.BrowserProvider(window.ethereum);
+          console.log(web3Provider)
+          await web3Provider.send("eth_requestAccounts", []);
+          setLocalEthProvider(web3Provider);
+          setEthProvider(web3Provider); 
+          const signer = await web3Provider.getSigner();
+          const connectedAddress = await signer.getAddress()
+          console.log('Connected account address:', connectedAddress);
+          setL1Account(connectedAddress);
+        } else {
+          console.error('No Ethereum provider detected. Please install MetaMask.');
+        }
+      } catch (error) {
+        console.error('Failed to get connected account address:', error);
+      }
+    };
+
     useEffect(() => {
       initializePXE();
-    }, []);
+
+      if (window.ethereum) {
+        console.log('Ethereum provider detected. Fetching connected account address...');
+        getConnectedAccountAddress();
+      }
+
+      if (showHistory) {
+        fetchPXETransactions();
+        if (ethProvider && l1Account) {
+          console.log('Fetching L1 Transactions...');
+          setIsLoadingL1Transactions(true);
+          fetchL1Transactions().finally(() => {
+            setIsLoadingL1Transactions(false);
+            console.log('Finished fetching L1 transactions.');
+          });
+        } else {
+          console.error('ethProvider or address is not initialized. Cannot fetch L1 transactions.');
+        }        
+      }
+    }, [showHistory, l1Account, initializePXE, fetchPXETransactions, fetchL1Transactions]);
 
     const handleChainSelect = async (chain: string) => {
       setSelectedChain(chain);
@@ -57,12 +111,16 @@ export function CryptoWallet() {
       setL1ChainName(null);
       setL1ChainBlock(null);
       setL1ConnectionError(null);
+      //setEthProvider(null);
 
       try {
-        const { chainId, name, block } = await connectToL1Chain(chain);
+        const { chainId, name, block, provider } = await connectToL1Chain(chain);
+        //console.log(provider)
         setL1ChainId(chainId);
         setL1ChainName(name);
-        setL1ChainBlock(block);
+        setL1ChainBlock(block);        
+        //setEthProvider(ethProvider);
+        await fetchL1Transactions();
       } catch (error) {
         console.error('Failed to connect to L1 chain:', error);
         setL1ConnectionError(error instanceof Error ? error.message : 'Unknown error');
@@ -94,8 +152,68 @@ export function CryptoWallet() {
     };
 
     const handleAztecEthereumTransfer = async () => {
-      console.log(`Transferring ${transferAmount} ${transferDirection === 'toAztec' ? 'to' : 'from'} Aztec on ${selectedChain}`);
-      // Placeholder for actual transfer logic using the PXE client
+      if (transferDirection !== 'toAztec' || !ethProvider) {
+        setTransferStatus('Invalid transfer configuration');
+        return;
+      }
+
+      setTransferStatus('Initiating transfer...');
+      try {
+        setTransferStatus('Sending transaction...');
+        const txHash = await depositToAztecPrivate(ethProvider, transferAmount);
+        setTransferStatus(`Transaction sent. Hash: ${txHash}`);
+        setTransferStatus('Waiting for confirmation...');
+        const receipt = await ethProvider.waitForTransaction(txHash);
+        setTransferStatus(`Transfer successful. Confirmed in block: ${receipt!.blockNumber}`);
+        //setTransferStatus(`Transfer successful. Transaction hash: ${txHash}`);
+      } catch (error) {
+        setTransferStatus(`Transfer failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    };
+
+    const renderTransactionHistory = () => {
+      return (
+        <div>
+          <Tabs value={activeHistoryTab} onValueChange={(value) => setActiveHistoryTab(value as 'PXE' | 'L1')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="PXE">PXE Transactions</TabsTrigger> 
+              <TabsTrigger value="L1">L1 Transactions</TabsTrigger>   
+            </TabsList>
+            <TabsContent value="PXE"> 
+              <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                {pxeTransactions.length > 0 ? (
+                  pxeTransactions.map((tx) => (
+                    <div key={tx.id} className="mb-2 p-2 border rounded">
+                      <p>{tx.type}: {tx.amount} ETH</p>
+                      <p>To/From: {tx.to || tx.from}</p>
+                      <p>Date: {new Date(tx.timestamp).toLocaleDateString()}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p>No PXE transactions found.</p>
+                )}
+              </ScrollArea>
+            </TabsContent>
+            <TabsContent value="L1"> 
+              <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                {isLoadingL1Transactions ? (
+                  <p>Loading L1 transactions...</p> 
+                ) : l1Transactions.length > 0 ? (
+                  l1Transactions.map((tx) => (
+                    <div key={tx.id} className="mb-2 p-2 border rounded">
+                      <p>{tx.type}: {tx.amount} ETH</p>
+                      <p>To/From: {tx.to || tx.from}</p>
+                      <p>Date: {new Date(tx.timestamp).toLocaleDateString()}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p>No L1 transactions found.</p>
+                )}
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
+        </div>
+      );
     };
 
     return (
@@ -121,7 +239,7 @@ export function CryptoWallet() {
               </Button>
             </div>
           </div>
-          {!showHistory ? (
+          {!showHistory ? renderTransactionHistory() : (
             <Tabs defaultValue="send" className="w-full">
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="send">Send</TabsTrigger>
@@ -209,7 +327,8 @@ export function CryptoWallet() {
                       { value: 'ethereum', label: 'Ethereum Mainnet' },
                       { value: 'goerli', label: 'Goerli Testnet' },
                       { value: 'sepolia', label: 'Sepolia Testnet' },
-                      { value: 'polygon', label: 'Polygon' }
+                      { value: 'polygon', label: 'Polygon' },
+                      { value: 'localhost', label: 'Localhost (Test)' },
                     ]}
                     placeholder="Select EVM Chain"
                     onChange={handleChainSelect}
@@ -229,28 +348,24 @@ export function CryptoWallet() {
                   <Button 
                     className="w-full mt-2" 
                     onClick={handleAztecEthereumTransfer}
-                    disabled={!selectedChain || !transferAmount}
+                    disabled={!selectedChain || !transferAmount || transferDirection !== 'toAztec' || !ethProvider}
                   >
                     Transfer {transferDirection === 'toAztec' ? 'to' : 'from'} Aztec
                   </Button>
+                  {transferStatus && (
+                    <div className="mt-2 text-sm text-gray-600">
+                      {transferStatus}
+                    </div>
+                    )}
+                  {selectedChain === 'localhost' && (
+                    <div className="mt-2 text-sm text-yellow-600">
+                      Warning: You are connected to a local test chain. This is for testing purposes only.
+                    </div>
+                  )}              
                 </div>
               </TabsContent>
             </Tabs>
-          ) : (
-            // Existing transaction history content
-              <div>
-              <h3 className="text-lg font-semibold mb-2">Transaction History</h3>
-              <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-                {transactions.map((tx) => (
-                  <div key={tx.id} className="mb-2 p-2 border rounded">
-                    <p>{tx.type}: {tx.amount} ETH</p>
-                    <p>To/From: {tx.to || tx.from}</p>
-                    <p>Date: {new Date(tx.timestamp).toLocaleDateString()}</p>
-                  </div>
-                ))}
-              </ScrollArea>
-            </div>
-          )}
+          ) }
 
           <div className="mt-4">
             <h3 className="text-lg font-semibold">Connection Status</h3>
@@ -277,6 +392,9 @@ export function CryptoWallet() {
                 <p className="text-green-600">Connected to {l1ChainName}</p>
                 <p>Chain ID: {l1ChainId}</p>
                 <p>Block Number: {l1ChainBlock}</p>
+                {selectedChain === 'localhost' && (
+                  <p className="text-yellow-600">This is a local test chain</p>
+                )}
                 </>
               ) : l1ConnectionError ? (
                 <p className="text-red-500">L1 Connection Error: {l1ConnectionError}</p>
@@ -288,7 +406,7 @@ export function CryptoWallet() {
         </CardContent>
         <CardFooter className="bg-gray-50 border-t border-gray-200">
           <Button className="w-full" onClick={() => setShowHistory(!showHistory)}>
-            {showHistory ? 'Hide' : 'View'} Transaction History
+            {showHistory ? 'View' : 'Hide'} Transaction History
           </Button>
         </CardFooter>
       </Card>
